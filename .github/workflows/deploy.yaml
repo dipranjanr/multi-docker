@@ -1,0 +1,27 @@
+name: Deploy complex multi-container application
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - run: docker build -t dipranjanrakshit/react-test -f ./client/Dockerfile.dev ./client/
+      - run: docker run -e CI=true dipranjanrakshit/react-test npm test
+
+      - name: Push production images to Docker Hub
+        run: |
+            docker build -t dipranjanrakshit/multi-client ./client
+            docker build -t dipranjanrakshit/multi-nginx ./nginx
+            docker build -t dipranjanrakshit/multi-server ./server
+            docker build -t dipranjanrakshit/multi-worker ./worker
+            # Log in to the docker CLI
+            echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+            # Take those images and push them to docker hub
+            docker push dipranjanrakshit/multi-client
+            docker push dipranjanrakshit/multi-nginx
+            docker push dipranjanrakshit/multi-server
+            docker push dipranjanrakshit/multi-worker
